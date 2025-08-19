@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Manage Products</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f2f6fc; padding: 20px; color: #333; }
+h1 { text-align: center; color: #2c3e50; }
+.form-container { max-width: 500px; margin: 20px auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0px 3px 6px rgba(0,0,0,0.1); }
+input, textarea, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ddd; font-size: 14px; }
+button { background: #3498db; color: white; cursor: pointer; border: none; transition: 0.3s; }
+button:hover { background: #2980b9; }
+.product-list { margin-top: 30px; max-width: 800px; margin-left: auto; margin-right: auto; }
+.product-card { display: flex; align-items: center; justify-content: space-between; background: #fff; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); }
+.product-card img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 10px; }
+.product-info { flex: 1; margin-left: 10px; }
+.product-info h3 { margin: 0; font-size: 16px; color: #2c3e50; }
+.product-info p { margin: 3px 0; font-size: 13px; color: #555; }
+.actions button { margin-left: 5px; font-size: 12px; padding: 6px 10px; border-radius: 5px; }
+.delete-btn { background: #e74c3c; }
+.edit-btn { background: #f39c12; }
+.toggle-btn { background: #27ae60; }
+.delete-btn:hover { background: #c0392b; }
+.edit-btn:hover { background: #d68910; }
+.toggle-btn:hover { background: #1e8449; }
+</style>
+</head>
+<body>
+
+<h1>Admin - Manage Products</h1>
+
+<div class="form-container">
+<h2>Add / Edit Product</h2>
+<input type="text" id="productName" placeholder="Enter product name">
+<input type="number" id="productPrice" placeholder="Enter price">
+<textarea id="productDescription" placeholder="Enter product description"></textarea>
+<input type="file" id="productImage" accept="image/*">
+<button onclick="addOrUpdateProduct()">Save Product</button>
+</div>
+
+<div class="product-list" id="productList"></div>
+
+<script>
+let editingIndex = -1;
+
+function loadProducts() {
+  const products = JSON.parse(localStorage.getItem("products")) || [];
+  const productList = document.getElementById("productList");
+  productList.innerHTML="";
+  products.forEach((product,index)=>{
+    const card = document.createElement("div");
+    card.className="product-card";
+    card.innerHTML=`
+      <img src="${product.image}" alt="${product.name}">
+      <div class="product-info">
+        <h3>${product.name}</h3>
+        <p>₦${product.price}</p>
+        <p>${product.description}</p>
+        <p>Status: <b>${product.available ? "Available" : "Sold Out"}</b></p>
+      </div>
+      <div class="actions">
+        <button class="edit-btn" onclick="editProduct(${index})">Edit</button>
+        <button class="delete-btn" onclick="deleteProduct(${index})">Delete</button>
+        <button class="toggle-btn" onclick="toggleAvailability(${index})">
+          ${product.available ? "Mark as Sold" : "Mark as Available"}
+        </button>
+      </div>
+    `;
+    productList.appendChild(card);
+  });
+}
+
+function addOrUpdateProduct() {
+  const name=document.getElementById("productName").value;
+  const price=document.getElementById("productPrice").value;
+  const description=document.getElementById("productDescription").value;
+  const imageInput=document.getElementById("productImage");
+
+  if(!name || !price || (!imageInput.files[0] && editingIndex===-1)){ alert("Fill all fields and select image"); return; }
+
+  const reader = new FileReader();
+  reader.onload=function(e){
+    const products=JSON.parse(localStorage.getItem("products"))||[];
+    if(editingIndex===-1){
+      products.push({name,price,description,image:e.target.result,available:true});
+    } else {
+      products[editingIndex].name=name;
+      products[editingIndex].price=price;
+      products[editingIndex].description=description;
+      if(imageInput.files[0]) products[editingIndex].image=e.target.result;
+      editingIndex=-1;
+    }
+    localStorage.setItem("products",JSON.stringify(products));
+    loadProducts();
+    document.getElementById("productName").value="";
+    document.getElementById("productPrice").value="";
+    document.getElementById("productDescription").value="";
+    document.getElementById("productImage").value="";
+  };
+  if(imageInput.files[0]) reader.readAsDataURL(imageInput.files[0]);
+}
+
+function editProduct(index){
+  const products=JSON.parse(localStorage.getItem("products"))||[];
+  document.getElementById("productName").value=products[index].name;
+  document.getElementById("productPrice").value=products[index].price;
+  document.getElementById("productDescription").value=products[index].description;
+  editingIndex=index;
+}
+
+function deleteProduct(index){
+  const products=JSON.parse(localStorage.getItem("products"))||[];
+  products.splice(index,1);
+  localStorage.setItem("products",JSON.stringify(products));
+  loadProducts();
+}
+
+function toggleAvailability(index){
+  const products=JSON.parse(localStorage.getItem("products"))||[];
+  products[index].available=!products[index].available;
+  localStorage.setItem("products",JSON.stringify(products));
+  loadProducts();
+}
+
+window.onload=loadProducts;
+</script>
+
+</body>
+</html>

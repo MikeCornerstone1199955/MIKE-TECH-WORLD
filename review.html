@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Reviews — MIKE_TECH_WORLD STORE</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+    h2 { text-align: center; color: #333; }
+    .review-container { max-width: 600px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    label { display: block; margin: 10px 0 4px; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px; }
+    button { background: #4f46e5; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #4338ca; }
+    .reviews { margin-top: 20px; }
+    .review { border-bottom: 1px solid #ddd; padding: 10px 0; }
+    .review strong { display: block; color: #4f46e5; margin-bottom: 4px; }
+    .stars { color: #facc15; }
+    .muted { color: #6b7280; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <h2>Product Reviews</h2>
+
+  <div class="review-container">
+    <label for="product">Select Product</label>
+    <select id="product"></select>
+
+    <label for="rating">Rating (1-5)</label>
+    <select id="rating">
+      <option value="1">1 Star</option>
+      <option value="2">2 Stars</option>
+      <option value="3">3 Stars</option>
+      <option value="4">4 Stars</option>
+      <option value="5">5 Stars</option>
+    </select>
+
+    <label for="reviewText">Review</label>
+    <textarea id="reviewText" rows="4" placeholder="Write your review..."></textarea>
+
+    <button onclick="submitReview()">Submit Review</button>
+
+    <div class="reviews" id="reviewsList"></div>
+  </div>
+
+  <script>
+    const KEY_PRODUCTS = 'products';
+    const KEY_REVIEWS = 'reviews';
+    const loggedInUser = localStorage.getItem('loggedInUser') || 'Guest';
+
+    const productSelect = document.getElementById('product');
+    const reviewsList = document.getElementById('reviewsList');
+
+    function loadProducts() {
+      try { return JSON.parse(localStorage.getItem(KEY_PRODUCTS)) || []; } 
+      catch { return []; }
+    }
+
+    function loadReviews() {
+      try { return JSON.parse(localStorage.getItem(KEY_REVIEWS)) || []; }
+      catch { return []; }
+    }
+
+    function saveReviews(reviews) {
+      localStorage.setItem(KEY_REVIEWS, JSON.stringify(reviews));
+    }
+
+    function populateProducts() {
+      const products = loadProducts();
+      productSelect.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    function submitReview() {
+      const productId = productSelect.value;
+      const rating = parseInt(document.getElementById('rating').value);
+      const text = document.getElementById('reviewText').value.trim();
+
+      if(!productId || !rating || !text) { alert('Please fill all fields'); return; }
+
+      const reviews = loadReviews();
+      reviews.push({ productId, user: loggedInUser, rating, text, date: new Date().toLocaleString() });
+      saveReviews(reviews);
+
+      document.getElementById('reviewText').value = '';
+      document.getElementById('rating').value = '5';
+      alert('Review submitted!');
+      renderReviews();
+    }
+
+    function renderReviews() {
+      const reviews = loadReviews();
+      const products = loadProducts();
+
+      reviewsList.innerHTML = reviews.map(r => {
+        const product = products.find(p => p.id === r.productId) || { name: 'Unknown Product' };
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        return `
+          <div class="review">
+            <strong>${product.name} — ${r.user}</strong>
+            <span class="stars">${stars}</span>
+            <p>${r.text}</p>
+            <div class="muted">${r.date}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      populateProducts();
+      renderReviews();
+    });
+  </script>
+
+</body>
+</html>
